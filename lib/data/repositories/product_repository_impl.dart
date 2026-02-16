@@ -21,6 +21,7 @@ class ProductRepositoryImpl implements IProductRepository {
       price: p.price,
       unit: p.unit,
       imagePath: p.imagePath,
+      stockQuantity: p.stockQuantity,
     )).toList();
   }
 
@@ -33,6 +34,7 @@ class ProductRepositoryImpl implements IProductRepository {
         price: product.price,
         unit: product.unit,
         imagePath: Value(product.imagePath),
+        stockQuantity: Value(product.stockQuantity),
       ),
     );
   }
@@ -45,6 +47,7 @@ class ProductRepositoryImpl implements IProductRepository {
         price: Value(product.price),
         unit: Value(product.unit),
         imagePath: Value(product.imagePath),
+        stockQuantity: Value(product.stockQuantity),
       ),
     );
   }

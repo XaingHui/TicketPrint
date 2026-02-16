@@ -659,6 +659,14 @@ class $ProductsTableTable extends ProductsTable
   late final GeneratedColumn<String> imagePath = GeneratedColumn<String>(
       'image_path', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _stockQuantityMeta =
+      const VerificationMeta('stockQuantity');
+  @override
+  late final GeneratedColumn<int> stockQuantity = GeneratedColumn<int>(
+      'stock_quantity', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
   static const VerificationMeta _categoryMeta =
       const VerificationMeta('category');
   @override
@@ -675,7 +683,7 @@ class $ProductsTableTable extends ProductsTable
       defaultValue: currentDateAndTime);
   @override
   List<GeneratedColumn> get $columns =>
-      [id, name, price, unit, imagePath, category, createdAt];
+      [id, name, price, unit, imagePath, stockQuantity, category, createdAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -713,6 +721,12 @@ class $ProductsTableTable extends ProductsTable
       context.handle(_imagePathMeta,
           imagePath.isAcceptableOrUnknown(data['image_path']!, _imagePathMeta));
     }
+    if (data.containsKey('stock_quantity')) {
+      context.handle(
+          _stockQuantityMeta,
+          stockQuantity.isAcceptableOrUnknown(
+              data['stock_quantity']!, _stockQuantityMeta));
+    }
     if (data.containsKey('category')) {
       context.handle(_categoryMeta,
           category.isAcceptableOrUnknown(data['category']!, _categoryMeta));
@@ -740,6 +754,8 @@ class $ProductsTableTable extends ProductsTable
           .read(DriftSqlType.string, data['${effectivePrefix}unit'])!,
       imagePath: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}image_path']),
+      stockQuantity: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}stock_quantity'])!,
       category: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}category']),
       createdAt: attachedDatabase.typeMapping
@@ -760,6 +776,7 @@ class ProductsTableData extends DataClass
   final double price;
   final String unit;
   final String? imagePath;
+  final int stockQuantity;
   final String? category;
   final DateTime createdAt;
   const ProductsTableData(
@@ -768,6 +785,7 @@ class ProductsTableData extends DataClass
       required this.price,
       required this.unit,
       this.imagePath,
+      required this.stockQuantity,
       this.category,
       required this.createdAt});
   @override
@@ -780,6 +798,7 @@ class ProductsTableData extends DataClass
     if (!nullToAbsent || imagePath != null) {
       map['image_path'] = Variable<String>(imagePath);
     }
+    map['stock_quantity'] = Variable<int>(stockQuantity);
     if (!nullToAbsent || category != null) {
       map['category'] = Variable<String>(category);
     }
@@ -796,6 +815,7 @@ class ProductsTableData extends DataClass
       imagePath: imagePath == null && nullToAbsent
           ? const Value.absent()
           : Value(imagePath),
+      stockQuantity: Value(stockQuantity),
       category: category == null && nullToAbsent
           ? const Value.absent()
           : Value(category),
@@ -812,6 +832,7 @@ class ProductsTableData extends DataClass
       price: serializer.fromJson<double>(json['price']),
       unit: serializer.fromJson<String>(json['unit']),
       imagePath: serializer.fromJson<String?>(json['imagePath']),
+      stockQuantity: serializer.fromJson<int>(json['stockQuantity']),
       category: serializer.fromJson<String?>(json['category']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
     );
@@ -825,6 +846,7 @@ class ProductsTableData extends DataClass
       'price': serializer.toJson<double>(price),
       'unit': serializer.toJson<String>(unit),
       'imagePath': serializer.toJson<String?>(imagePath),
+      'stockQuantity': serializer.toJson<int>(stockQuantity),
       'category': serializer.toJson<String?>(category),
       'createdAt': serializer.toJson<DateTime>(createdAt),
     };
@@ -836,6 +858,7 @@ class ProductsTableData extends DataClass
           double? price,
           String? unit,
           Value<String?> imagePath = const Value.absent(),
+          int? stockQuantity,
           Value<String?> category = const Value.absent(),
           DateTime? createdAt}) =>
       ProductsTableData(
@@ -844,6 +867,7 @@ class ProductsTableData extends DataClass
         price: price ?? this.price,
         unit: unit ?? this.unit,
         imagePath: imagePath.present ? imagePath.value : this.imagePath,
+        stockQuantity: stockQuantity ?? this.stockQuantity,
         category: category.present ? category.value : this.category,
         createdAt: createdAt ?? this.createdAt,
       );
@@ -854,6 +878,9 @@ class ProductsTableData extends DataClass
       price: data.price.present ? data.price.value : this.price,
       unit: data.unit.present ? data.unit.value : this.unit,
       imagePath: data.imagePath.present ? data.imagePath.value : this.imagePath,
+      stockQuantity: data.stockQuantity.present
+          ? data.stockQuantity.value
+          : this.stockQuantity,
       category: data.category.present ? data.category.value : this.category,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
     );
@@ -867,6 +894,7 @@ class ProductsTableData extends DataClass
           ..write('price: $price, ')
           ..write('unit: $unit, ')
           ..write('imagePath: $imagePath, ')
+          ..write('stockQuantity: $stockQuantity, ')
           ..write('category: $category, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -874,8 +902,8 @@ class ProductsTableData extends DataClass
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, price, unit, imagePath, category, createdAt);
+  int get hashCode => Object.hash(
+      id, name, price, unit, imagePath, stockQuantity, category, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -885,6 +913,7 @@ class ProductsTableData extends DataClass
           other.price == this.price &&
           other.unit == this.unit &&
           other.imagePath == this.imagePath &&
+          other.stockQuantity == this.stockQuantity &&
           other.category == this.category &&
           other.createdAt == this.createdAt);
 }
@@ -895,6 +924,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
   final Value<double> price;
   final Value<String> unit;
   final Value<String?> imagePath;
+  final Value<int> stockQuantity;
   final Value<String?> category;
   final Value<DateTime> createdAt;
   final Value<int> rowid;
@@ -904,6 +934,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
     this.price = const Value.absent(),
     this.unit = const Value.absent(),
     this.imagePath = const Value.absent(),
+    this.stockQuantity = const Value.absent(),
     this.category = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -914,6 +945,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
     required double price,
     required String unit,
     this.imagePath = const Value.absent(),
+    this.stockQuantity = const Value.absent(),
     this.category = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -927,6 +959,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
     Expression<double>? price,
     Expression<String>? unit,
     Expression<String>? imagePath,
+    Expression<int>? stockQuantity,
     Expression<String>? category,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
@@ -937,6 +970,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
       if (price != null) 'price': price,
       if (unit != null) 'unit': unit,
       if (imagePath != null) 'image_path': imagePath,
+      if (stockQuantity != null) 'stock_quantity': stockQuantity,
       if (category != null) 'category': category,
       if (createdAt != null) 'created_at': createdAt,
       if (rowid != null) 'rowid': rowid,
@@ -949,6 +983,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
       Value<double>? price,
       Value<String>? unit,
       Value<String?>? imagePath,
+      Value<int>? stockQuantity,
       Value<String?>? category,
       Value<DateTime>? createdAt,
       Value<int>? rowid}) {
@@ -958,6 +993,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
       price: price ?? this.price,
       unit: unit ?? this.unit,
       imagePath: imagePath ?? this.imagePath,
+      stockQuantity: stockQuantity ?? this.stockQuantity,
       category: category ?? this.category,
       createdAt: createdAt ?? this.createdAt,
       rowid: rowid ?? this.rowid,
@@ -982,6 +1018,9 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
     if (imagePath.present) {
       map['image_path'] = Variable<String>(imagePath.value);
     }
+    if (stockQuantity.present) {
+      map['stock_quantity'] = Variable<int>(stockQuantity.value);
+    }
     if (category.present) {
       map['category'] = Variable<String>(category.value);
     }
@@ -1002,6 +1041,7 @@ class ProductsTableCompanion extends UpdateCompanion<ProductsTableData> {
           ..write('price: $price, ')
           ..write('unit: $unit, ')
           ..write('imagePath: $imagePath, ')
+          ..write('stockQuantity: $stockQuantity, ')
           ..write('category: $category, ')
           ..write('createdAt: $createdAt, ')
           ..write('rowid: $rowid')
@@ -1839,6 +1879,7 @@ typedef $$ProductsTableTableCreateCompanionBuilder = ProductsTableCompanion
   required double price,
   required String unit,
   Value<String?> imagePath,
+  Value<int> stockQuantity,
   Value<String?> category,
   Value<DateTime> createdAt,
   Value<int> rowid,
@@ -1850,6 +1891,7 @@ typedef $$ProductsTableTableUpdateCompanionBuilder = ProductsTableCompanion
   Value<double> price,
   Value<String> unit,
   Value<String?> imagePath,
+  Value<int> stockQuantity,
   Value<String?> category,
   Value<DateTime> createdAt,
   Value<int> rowid,
@@ -1878,6 +1920,9 @@ class $$ProductsTableTableFilterComposer
 
   ColumnFilters<String> get imagePath => $composableBuilder(
       column: $table.imagePath, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get stockQuantity => $composableBuilder(
+      column: $table.stockQuantity, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get category => $composableBuilder(
       column: $table.category, builder: (column) => ColumnFilters(column));
@@ -1910,6 +1955,10 @@ class $$ProductsTableTableOrderingComposer
   ColumnOrderings<String> get imagePath => $composableBuilder(
       column: $table.imagePath, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<int> get stockQuantity => $composableBuilder(
+      column: $table.stockQuantity,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get category => $composableBuilder(
       column: $table.category, builder: (column) => ColumnOrderings(column));
 
@@ -1940,6 +1989,9 @@ class $$ProductsTableTableAnnotationComposer
 
   GeneratedColumn<String> get imagePath =>
       $composableBuilder(column: $table.imagePath, builder: (column) => column);
+
+  GeneratedColumn<int> get stockQuantity => $composableBuilder(
+      column: $table.stockQuantity, builder: (column) => column);
 
   GeneratedColumn<String> get category =>
       $composableBuilder(column: $table.category, builder: (column) => column);
@@ -1979,6 +2031,7 @@ class $$ProductsTableTableTableManager extends RootTableManager<
             Value<double> price = const Value.absent(),
             Value<String> unit = const Value.absent(),
             Value<String?> imagePath = const Value.absent(),
+            Value<int> stockQuantity = const Value.absent(),
             Value<String?> category = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -1989,6 +2042,7 @@ class $$ProductsTableTableTableManager extends RootTableManager<
             price: price,
             unit: unit,
             imagePath: imagePath,
+            stockQuantity: stockQuantity,
             category: category,
             createdAt: createdAt,
             rowid: rowid,
@@ -1999,6 +2053,7 @@ class $$ProductsTableTableTableManager extends RootTableManager<
             required double price,
             required String unit,
             Value<String?> imagePath = const Value.absent(),
+            Value<int> stockQuantity = const Value.absent(),
             Value<String?> category = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -2009,6 +2064,7 @@ class $$ProductsTableTableTableManager extends RootTableManager<
             price: price,
             unit: unit,
             imagePath: imagePath,
+            stockQuantity: stockQuantity,
             category: category,
             createdAt: createdAt,
             rowid: rowid,

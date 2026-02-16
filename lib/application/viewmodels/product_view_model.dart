@@ -67,7 +67,7 @@ class ProductViewModel extends ChangeNotifier {
     return null;
   }
 
-  Future<void> addProduct(String name, double price, String unit, {String? imagePath}) async {
+  Future<void> addProduct(String name, double price, String unit, {String? imagePath, int stockQuantity = 0}) async {
     try {
       final product = Product(
         id: const Uuid().v4(),
@@ -75,6 +75,7 @@ class ProductViewModel extends ChangeNotifier {
         price: price,
         unit: unit,
         imagePath: imagePath,
+        stockQuantity: stockQuantity,
       );
       await _repository.addProduct(product);
       await loadProducts(); // Refresh list

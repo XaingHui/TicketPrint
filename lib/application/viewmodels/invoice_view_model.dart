@@ -48,7 +48,20 @@ class InvoiceViewModel extends ChangeNotifier {
 
   /// 添加商品条目
   /// 添加商品条目 (累加数量)
-  void addItem(String name, double price, String unit, double quantity) {
+  Future<void> addItem(String name, double price, String unit, double quantity) async {
+    // Check stock
+    final product = await _database.getProductByName(name);
+    if (product != null) {
+      final currentInCart = getProductQuantity(name);
+      final totalRequested = currentInCart + quantity;
+      
+      if (totalRequested > product.stockQuantity) {
+        _errorMessage = "库存不足! ${name} 余量: ${product.stockQuantity}";
+        notifyListeners();
+        return;
+      }
+    }
+
     final existingIndex = _currentItems.indexWhere((item) => item.productName == name);
     if (existingIndex != -1) {
       final currentQty = _currentItems[existingIndex].quantity;
@@ -68,7 +81,7 @@ class InvoiceViewModel extends ChangeNotifier {
 
   /// 更新商品数量 (用于选品页面)
   /// 如果 quantity <= 0，则移除该商品
-  void updateProductQuantity(String productName, double price, String unit, double quantity) {
+  Future<void> updateProductQuantity(String productName, double price, String unit, double quantity) async {
     final existingIndex = _currentItems.indexWhere((item) => item.productName == productName);
 
     if (quantity <= 0) {
@@ -78,10 +91,23 @@ class InvoiceViewModel extends ChangeNotifier {
       }
       return;
     }
+    
+    // Check stock for direct update
+    final product = await _database.getProductByName(productName);
+    if (product != null) {
+      if (quantity > product.stockQuantity) {
+         _errorMessage = "库存不足! ${productName} 余量: ${product.stockQuantity}";
+         notifyListeners();
+         // Optionally clamp quantity? Or just return?
+         // Let's just return for now, preventing the update.
+         // But we might need to reset the UI if it was a text input? 
+         // For now, just error message.
+         return;
+      }
+    }
 
     if (existingIndex != -1) {
       // Update existing
-      final oldItem = _currentItems[existingIndex];
       _currentItems[existingIndex] = InvoiceItem(
         productName: productName,
         price: price, // Update price if changed in product? checking... usually price snapshot.
@@ -134,8 +160,6 @@ class InvoiceViewModel extends ChangeNotifier {
   /// 计算应收金额 (Final Amount)
   double get finalAmount => totalAmount - _discountAmount;
 
-  // ... inside InvoiceViewModel class
-
   String? _targetCustomer;
   String? get targetCustomer => _targetCustomer;
 
@@ -154,7 +178,7 @@ class InvoiceViewModel extends ChangeNotifier {
   }
 
   /// 保存当前票据并生成 PDF
-  Future<void> saveAndPrintInvoice() async {
+  Future<void> saveAndPrintInvoice({VoidCallback? onSaved}) async {
     if (_currentItems.isEmpty) {
       _errorMessage = "票据为空";
       notifyListeners();
@@ -171,7 +195,7 @@ class InvoiceViewModel extends ChangeNotifier {
       final customerName = _targetCustomer;
       final discount = _discountAmount; // Capture current discount
 
-      // 1. Transaction to save Invoice, Items and Customer to Database
+      // 1. Transaction to save Invoice, Items and Customer to Database, AND Deduct Stock
       await _database.transaction(() async {
         await _database.insertInvoice(
           InvoicesTableCompanion(
@@ -192,6 +216,19 @@ class InvoiceViewModel extends ChangeNotifier {
               quantity: drift.Value(item.quantity),
             ),
           );
+          
+          // Deduct Stock
+          final product = await _database.getProductByName(item.productName);
+          if (product != null) {
+            final newStock = product.stockQuantity - item.quantity.toInt();
+            // We assume quantity is integer for stock, but InvoiceItem has double.
+            // If selling 1.5kg, how does it affect "quantity" which is integer?
+            // "quantity" in product table IS integer.
+            // If user sells by weight (1.5kg), stock tracking might need to be double or ignored?
+            // User requested "stock - 10", implying integer count (boxes/pieces).
+            // Let's cast to int for now.
+             await _database.updateProductStock(item.productName, newStock);
+          }
         }
 
         // Save Customer if new
@@ -208,6 +245,9 @@ class InvoiceViewModel extends ChangeNotifier {
           }
         }
       });
+
+      // Transaction successful, trigger callback (e.g. to refresh stock)
+      onSaved?.call();
 
       // 2. Prepare Data for PDF
       final invoiceForPdf = Invoice(

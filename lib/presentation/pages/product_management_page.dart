@@ -28,6 +28,7 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
     final nameController = TextEditingController(text: product?.name ?? '');
     final priceController = TextEditingController(text: product?.price.toString() ?? '');
     final unitController = TextEditingController(text: product?.unit ?? '个');
+    final stockController = TextEditingController(text: product?.stockQuantity.toString() ?? '0'); // Stock Input
     String? selectedImagePath = product?.imagePath;
     
     showDialog(
@@ -37,87 +38,99 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
           return AlertDialog(
             title: Text(product == null ? '添加商品' : '编辑商品'),
             content: SizedBox(
-              width: 400, // Wider dialog
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Image Picker (Left)
-                  GestureDetector(
-                    onTap: () async {
-                       // ... (keep same logic, just UI tweak)
-                       final result = await FilePicker.platform.pickFiles(type: FileType.image);
-                       if (result != null) {
-                         setState(() => selectedImagePath = result.files.single.path);
-                       }
-                    },
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            color: Colors.grey[200],
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[300]!),
-                            image: selectedImagePath != null 
-                              ? DecorationImage(image: FileImage(File(selectedImagePath!)), fit: BoxFit.cover)
+              width: 500, 
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Image Picker (Top)
+                    GestureDetector(
+                      onTap: () async {
+                         final result = await FilePicker.platform.pickFiles(type: FileType.image);
+                         if (result != null) {
+                           setState(() => selectedImagePath = result.files.single.path);
+                         }
+                      },
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 120, // Slightly larger
+                            height: 120,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey[300]!),
+                              image: selectedImagePath != null 
+                                ? DecorationImage(image: FileImage(File(selectedImagePath!)), fit: BoxFit.cover)
+                                : null,
+                            ),
+                            child: selectedImagePath == null 
+                              ? const Icon(Icons.add_a_photo, color: Colors.grey, size: 40)
                               : null,
                           ),
-                          child: selectedImagePath == null 
-                            ? const Icon(Icons.add_a_photo, color: Colors.grey, size: 40)
-                            : null,
-                        ),
-                        if (selectedImagePath != null)
-                          TextButton.icon(
-                            onPressed: () => setState(() => selectedImagePath = null),
-                            icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
-                            label: const Text("清除图片", style: TextStyle(color: Colors.red)),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                            ),
-                          )
-                      ],
+                          if (selectedImagePath != null)
+                            TextButton.icon(
+                              onPressed: () => setState(() => selectedImagePath = null),
+                              icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                              label: const Text("清除图片", style: TextStyle(color: Colors.red)),
+                              style: TextButton.styleFrom(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              ),
+                            )
+                        ],
+                      ),
                     ),
-                  ),
-                  const Gap(16),
-                  // Inputs (Right)
-                  Expanded(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                    const Gap(24),
+                    // Inputs (Below)
+                    TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: '商品名称',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      ),
+                    ),
+                    const Gap(16),
+                    Row(
                       children: [
-                        TextField(
-                          controller: nameController,
-                          decoration: const InputDecoration(
-                            labelText: '商品名称',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: priceController,
+                            decoration: const InputDecoration(
+                              labelText: '单价 (¥)',
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            ),
+                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
                           ),
                         ),
                         const Gap(12),
-                        TextField(
-                          controller: priceController,
-                          decoration: const InputDecoration(
-                            labelText: '单价 (¥)',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                          ),
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        ),
-                        const Gap(12),
-                        TextField(
-                          controller: unitController,
-                          decoration: const InputDecoration(
-                            labelText: '单位',
-                            hintText: '如: 个, 箱, 斤',
-                            border: OutlineInputBorder(),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        Expanded(
+                          child: TextField( // Stock Input
+                            controller: stockController,
+                            decoration: const InputDecoration(
+                              labelText: '库存余量',
+                              border: OutlineInputBorder(),
+                              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            ),
+                            keyboardType: TextInputType.number,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                ],
+                    const Gap(16),
+                    TextField(
+                      controller: unitController,
+                      decoration: const InputDecoration(
+                        labelText: '单位',
+                        hintText: '如: 个, 箱, 斤',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             actions: [
@@ -130,6 +143,7 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
                   final name = nameController.text.trim();
                   final price = double.tryParse(priceController.text.trim()) ?? 0.0;
                   final unit = unitController.text.trim();
+                  final stock = int.tryParse(stockController.text.trim()) ?? 0;
                   
                   if (name.isEmpty || price < 0 || unit.isEmpty) {
                      ScaffoldMessenger.of(context).showSnackBar(
@@ -140,7 +154,7 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
     
                   final viewModel = context.read<ProductViewModel>();
                   if (product == null) {
-                    viewModel.addProduct(name, price, unit, imagePath: selectedImagePath);
+                    viewModel.addProduct(name, price, unit, imagePath: selectedImagePath, stockQuantity: stock);
                   } else {
                      final updatedProduct = Product(
                         id: product.id,
@@ -148,6 +162,7 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
                         price: price,
                         unit: unit,
                         imagePath: selectedImagePath,
+                        stockQuantity: stock,
                      );
                      viewModel.updateProduct(updatedProduct);
                   }
@@ -227,9 +242,29 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
                      product.name,
                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                    ),
-                   subtitle: Text(
-                     '¥${product.price} / ${product.unit}',
-                     style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                   subtitle: Row(
+                     children: [
+                       Text(
+                         '¥${product.price} / ${product.unit}',
+                         style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
+                       ),
+                       const Gap(12),
+                       Container(
+                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                         decoration: BoxDecoration(
+                           color: product.stockQuantity > 0 ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                           borderRadius: BorderRadius.circular(4),
+                           border: Border.all(color: product.stockQuantity > 0 ? Colors.green : Colors.red, width: 0.5),
+                         ),
+                         child: Text(
+                           '库存: ${product.stockQuantity}',
+                           style: TextStyle(
+                             fontSize: 12,
+                             color: product.stockQuantity > 0 ? Colors.green[700] : Colors.red[700],
+                           ),
+                         ),
+                       ),
+                     ],
                    ),
                    trailing: PopupMenuButton<String>(
                      icon: const Icon(Icons.more_vert),

@@ -167,7 +167,15 @@ class _InvoiceCreationPageState extends State<InvoiceCreationPage> {
                invoiceVM.setDiscountAmount(discount);
                // Proceed to Save and Print
                Navigator.pop(context);
-               invoiceVM.saveAndPrintInvoice();
+               
+               // Run save and then refresh products to update stock
+               invoiceVM.saveAndPrintInvoice(
+                 onSaved: () {
+                   if (context.mounted) {
+                     context.read<ProductViewModel>().loadProducts();
+                   }
+                 },
+               );
             }, 
             icon: const Icon(Icons.print),
             label: const Text('确认并打印'),
@@ -415,9 +423,18 @@ class _InvoiceCreationPageState extends State<InvoiceCreationPage> {
                                         FittedBox(
                                           fit: BoxFit.scaleDown,
                                           alignment: Alignment.centerLeft,
-                                          child: Text(
-                                            '¥${product.price} / ${product.unit}',
-                                            style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 13),
+                                          child: Row(
+                                            children: [
+                                              Text(
+                                                '¥${product.price} / ${product.unit}',
+                                                style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 13),
+                                              ),
+                                              const Gap(8),
+                                              Text(
+                                                '余量: ${product.stockQuantity}',
+                                                style: const TextStyle(color: Colors.black, fontSize: 12, fontWeight: FontWeight.bold),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                         const Spacer(), // Push buttons to bottom

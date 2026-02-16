@@ -14,7 +14,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 5; // Bump version for migration from 4 to 5
+  int get schemaVersion => 6; // Bump version for migration from 5 to 6
   
   @override
   MigrationStrategy get migration {
@@ -41,17 +41,8 @@ class AppDatabase extends _$AppDatabase {
           await m.addColumn(invoicesTable, invoicesTable.discountAmount);
         }
         if (from < 6) {
-          // Migration from v5 to v6 (Fix for missing column if v5 failed)
-          // We try to add it. If it exists, sqlite might throw, but drift might handle or we catch it?
-          // To be safe, we can just run it. If it fails due to duplicate, the app will crash on open?
-          // Ideally we check if column exists, but Drift Migrator doesn't expose easy check.
-          // Let's assume it failed before.
-          try {
-            await m.addColumn(invoicesTable, invoicesTable.discountAmount);
-          } catch (e) {
-             // Ignore if column already exists
-             print("Migration v6: Column might already exist: $e");
-          }
+           // Migration from v5 to v6: Add stockQuantity
+           await m.addColumn(productsTable, productsTable.stockQuantity);
         }
       },
     );
@@ -77,6 +68,17 @@ class AppDatabase extends _$AppDatabase {
   // Check if customer exists by name
   Future<CustomersTableData?> getCustomerByName(String name) {
     return (select(customersTable)..where((t) => t.name.equals(name))).getSingleOrNull();
+  }
+
+  // Products
+  Future<ProductsTableData?> getProductByName(String name) {
+    return (select(productsTable)..where((t) => t.name.equals(name))).getSingleOrNull();
+  }
+  
+  Future<void> updateProductStock(String name, int newStock) {
+    return (update(productsTable)..where((t) => t.name.equals(name))).write(ProductsTableCompanion(
+      stockQuantity: Value(newStock),
+    ));
   }
 }
 

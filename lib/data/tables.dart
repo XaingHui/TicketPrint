@@ -35,6 +35,7 @@ class ProductsTable extends Table {
   RealColumn get price => real()();
   TextColumn get unit => text()();
   TextColumn get imagePath => text().nullable()(); // NEW: Image Path
+  IntColumn get stockQuantity => integer().withDefault(const Constant(0))(); // NEW: Stock Quantity
   TextColumn get category => text().nullable()(); // Optional category
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   
