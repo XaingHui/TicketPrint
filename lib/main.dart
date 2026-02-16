@@ -34,7 +34,7 @@ class MyApp extends StatelessWidget {
       child: Consumer<SettingsViewModel>(
         builder: (context, settingsViewModel, child) {
           return MaterialApp(
-            title: 'Ticket Printing',
+            title: '票据打印',
             theme: settingsViewModel.currentTheme,
             home: const HomePage(),
             localizationsDelegates: [

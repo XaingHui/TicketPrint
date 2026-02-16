@@ -3,6 +3,7 @@ import 'product_management_page.dart';
 import 'invoice_creation_page.dart';
 import 'invoice_history_page.dart';
 import 'settings_page.dart';
+import '../widgets/themed_scaffold.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -23,7 +24,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return ThemedScaffold(
       body: _pages[_selectedIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
@@ -47,6 +48,7 @@ class _HomePageState extends State<HomePage> {
           ),
           NavigationDestination(
             icon: Icon(Icons.settings),
+            selectedIcon: Icon(Icons.settings),
             label: '设置',
           ),
         ],

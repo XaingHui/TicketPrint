@@ -5,6 +5,7 @@ import '../../application/viewmodels/product_view_model.dart';
 import '../../domain/entities/product.dart';
 import 'package:file_picker/file_picker.dart'; // Ensure file_picker is imported if used, or just dart:io for File
 import 'dart:io';
+import '../../presentation/widgets/themed_scaffold.dart';
 
 class ProductManagementPage extends StatefulWidget {
   const ProductManagementPage({super.key});
@@ -36,73 +37,82 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
           return AlertDialog(
             title: Text(product == null ? '添加商品' : '编辑商品'),
             content: SizedBox(
-              width: 500, // Wider for image side-by-side
+              width: 400, // Wider dialog
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Image Section
-                  Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      GestureDetector(
-                        onTap: () async {
-                           final path = await context.read<ProductViewModel>().pickImage();
-                           if (path != null) {
-                             setState(() {
-                               selectedImagePath = path;
-                             });
-                           }
-                        },
-                        child: Container(
-                          width: 120,
-                          height: 120,
+                  // Image Picker (Left)
+                  GestureDetector(
+                    onTap: () async {
+                       // ... (keep same logic, just UI tweak)
+                       final result = await FilePicker.platform.pickFiles(type: FileType.image);
+                       if (result != null) {
+                         setState(() => selectedImagePath = result.files.single.path);
+                       }
+                    },
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 100,
+                          height: 100,
                           decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            color: Colors.grey[200],
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+                            border: Border.all(color: Colors.grey[300]!),
                             image: selectedImagePath != null 
-                              ? DecorationImage(
-                                  image: FileImage(File(selectedImagePath!)),
-                                  fit: BoxFit.cover,
-                                )
+                              ? DecorationImage(image: FileImage(File(selectedImagePath!)), fit: BoxFit.cover)
                               : null,
                           ),
                           child: selectedImagePath == null 
-                            ? const Icon(Icons.add_a_photo, size: 40, color: Colors.grey)
+                            ? const Icon(Icons.add_a_photo, color: Colors.grey, size: 40)
                             : null,
                         ),
-                      ),
-                      TextButton(
-                        onPressed: selectedImagePath == null ? null : () {
-                          setState(() {
-                            selectedImagePath = null;
-                          });
-                        },
-                        child: const Text('清除图片'),
-                      ),
-                    ],
+                        if (selectedImagePath != null)
+                          TextButton.icon(
+                            onPressed: () => setState(() => selectedImagePath = null),
+                            icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                            label: const Text("清除图片", style: TextStyle(color: Colors.red)),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                            ),
+                          )
+                      ],
+                    ),
                   ),
-                  const Gap(24),
-                  // Form Section
+                  const Gap(16),
+                  // Inputs (Right)
                   Expanded(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         TextField(
                           controller: nameController,
-                          decoration: const InputDecoration(labelText: '商品名称'),
-                          autofocus: true,
+                          decoration: const InputDecoration(
+                            labelText: '商品名称',
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          ),
                         ),
-                        const Gap(10),
+                        const Gap(12),
                         TextField(
                           controller: priceController,
-                          decoration: const InputDecoration(labelText: '单价'),
+                          decoration: const InputDecoration(
+                            labelText: '单价 (¥)',
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          ),
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         ),
-                        const Gap(10),
+                        const Gap(12),
                         TextField(
                           controller: unitController,
-                          decoration: const InputDecoration(labelText: '单位 (如: 个, 箱, 斤)'),
+                          decoration: const InputDecoration(
+                            labelText: '单位',
+                            hintText: '如: 个, 箱, 斤',
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                          ),
                         ),
                       ],
                     ),
@@ -154,7 +164,7 @@ class _ProductManagementPageState extends State<ProductManagementPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return ThemedScaffold(
       appBar: AppBar(
         title: const Text('商品库管理'),
         actions: [

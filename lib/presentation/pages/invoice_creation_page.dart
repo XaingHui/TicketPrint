@@ -342,131 +342,148 @@ class _InvoiceCreationPageState extends State<InvoiceCreationPage> {
 
               if (products.isNotEmpty)
               Expanded(
-                child: GridView.builder(
-                  padding: const EdgeInsets.all(16.0),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 5, 
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 0.75, // Taller to fit buttons comfortably
-                  ),
-                  itemCount: products.length,
-                  itemBuilder: (context, index) {
-                    final product = products[index];
-                    final color = Colors.primaries[product.name.hashCode % Colors.primaries.length];
-                    final hasImage = product.imagePath != null && File(product.imagePath!).existsSync();
-                    final currentQty = invoiceVM.getProductQuantity(product.name);
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Mobile: ~2 columns, Tablet: ~4-5, Desktop: ~6+
+                    // Assuming min width per card ~160
+                    final crossAxisCount = (constraints.maxWidth / 160).floor().clamp(2, 6);
                     
-                    return Card(
-                      elevation: 2,
-                      clipBehavior: Clip.antiAlias,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      child: InkWell(
-                        onTap: () {
-                           // Tap card to add 1
-                           invoiceVM.addItem(product.name, product.price, product.unit, 1);
-                        },
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            // Top Image Placeholder
-                            Expanded(
-                              flex: 3,
-                              child: hasImage 
-                                ? Image.file(
-                                    File(product.imagePath!),
-                                    fit: BoxFit.cover,
-                                  )
-                                : Container(
-                                    color: color.withOpacity(0.2),
-                                    child: Center(
-                                      child: Text(
-                                        product.name.isNotEmpty ? product.name[0] : '?',
-                                        style: TextStyle(
-                                          fontSize: 36,
-                                          fontWeight: FontWeight.bold,
-                                          color: color,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                            ),
-                            // Bottom Info
-                            Expanded(
-                              flex: 2,
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      product.name,
-                                      style: Theme.of(context).textTheme.titleMedium!.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16, // Explicit larger font
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const Gap(4),
-                                    Text(
-                                      '¥${product.price} / ${product.unit}',
-                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                        color: Colors.grey[700],
-                                      ),
-                                    ),
-                                    const Spacer(),
-                                    // Quick Add/Subtract Buttons - Always visible
-                                    Row(
-                                      mainAxisAlignment: MainAxisAlignment.center, // Center chips
-                                      children: [
-                                        _QuickAdjustButton(
-                                          onPressed: currentQty > 0 
-                                            ? () => invoiceVM.updateProductQuantity(product.name, product.price, product.unit, currentQty - 1)
-                                            : null, // Disable if 0
-                                          icon: Icons.remove,
-                                          enabled: currentQty > 0,
-                                          backgroundColor: currentQty > 0 ? Theme.of(context).colorScheme.secondaryContainer : Colors.grey[200],
-                                          foregroundColor: currentQty > 0 ? Theme.of(context).colorScheme.onSecondaryContainer : Colors.grey,
-                                        ),
-                                        
-                                        // Click number to edit
-                                        InkWell(
-                                          onTap: () => _showQuantityDialog(context, product, currentQty, invoiceVM),
-                                          borderRadius: BorderRadius.circular(8),
-                                          child: Padding(
-                                            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 4.0), // Increased spacing to 24
-                                            child: Text(
-                                              currentQty.toStringAsFixed(0),
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold, 
-                                                fontSize: 20,
-                                                color: currentQty > 0 ? Theme.of(context).colorScheme.primary : Colors.grey,
-                                              ),
-                                            ),
+                    return GridView.builder(
+                      padding: const EdgeInsets.all(16.0),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount, 
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 0.62, // Much taller for safety
+                      ),
+                      itemCount: products.length,
+                      itemBuilder: (context, index) {
+                        final product = products[index];
+                        final color = Colors.primaries[product.name.hashCode % Colors.primaries.length];
+                        final hasImage = product.imagePath != null && File(product.imagePath!).existsSync();
+                        final currentQty = invoiceVM.getProductQuantity(product.name);
+                        
+                        return Card(
+                          elevation: 0, 
+                          color: Theme.of(context).colorScheme.surfaceContainerLow,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            side: BorderSide(color: Theme.of(context).colorScheme.outlineVariant.withOpacity(0.3)),
+                          ),
+                          clipBehavior: Clip.antiAlias,
+                          child: InkWell(
+                            onTap: () {
+                              invoiceVM.addItem(product.name, product.price, product.unit, 1);
+                            },
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // Image
+                                Expanded(
+                                  flex: 5, // More space for image
+                                  child: hasImage 
+                                    ? Image.file(File(product.imagePath!), fit: BoxFit.cover)
+                                    : Container(
+                                        color: color.withOpacity(0.1),
+                                        child: Center(
+                                          child: Text(
+                                            product.name.isNotEmpty ? product.name[0] : '?',
+                                            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: color),
                                           ),
                                         ),
+                                      ),
+                                ),
+                                // Info & Actions
+                                Expanded(
+                                  flex: 4, // Enough space for text + buttons
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        // Product Name (Safe)
+                                        Text(
+                                          product.name,
+                                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                          maxLines: 2, // Allow 2 lines
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        const Gap(4),
+                                        // Price (Safe)
+                                        FittedBox(
+                                          fit: BoxFit.scaleDown,
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            '¥${product.price} / ${product.unit}',
+                                            style: TextStyle(color: Theme.of(context).textTheme.bodySmall?.color, fontSize: 13),
+                                          ),
+                                        ),
+                                        const Spacer(), // Push buttons to bottom
+                                        // Quantity Selector
+                                        Container(
+                                          height: 36,
+                                          decoration: BoxDecoration(
+                                            color: currentQty > 0 ? Theme.of(context).colorScheme.primaryContainer : Colors.transparent,
+                                            borderRadius: BorderRadius.circular(18),
+                                            border: currentQty > 0 ? null : Border.all(color: Colors.grey.withOpacity(0.3)),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              _QuickAdjustButton(
+                                                icon: Icons.remove,
+                                                onPressed: currentQty > 0 
+                                                  ? () => invoiceVM.updateProductQuantity(product.name, product.price, product.unit, currentQty - 1)
+                                                  : null,
+                                                enabled: currentQty > 0,
+                                                iconSize: 18,
+                                                // Make button transparent to blend with container
+                                                backgroundColor: Colors.transparent,
+                                                foregroundColor: currentQty > 0 ? Theme.of(context).colorScheme.onPrimaryContainer : Colors.grey,
+                                              ),
+                                              
+                                              // Qty Text
+                                              InkWell(
+                                                onTap: () => _showQuantityDialog(context, product, currentQty, invoiceVM),
+                                                child: Padding(
+                                                   padding: const EdgeInsets.symmetric(horizontal: 4),
+                                                   child: Text(
+                                                    currentQty > 0 ? currentQty.toStringAsFixed(0) : "0",
+                                                    style: TextStyle(
+                                                      fontWeight: FontWeight.bold, 
+                                                      fontSize: 16,
+                                                      color: currentQty > 0 ? Theme.of(context).colorScheme.onPrimaryContainer : Colors.grey,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
 
-                                        _QuickAdjustButton(
-                                          onPressed: () {
-                                            invoiceVM.updateProductQuantity(product.name, product.price, product.unit, currentQty + 1);
-                                          },
-                                          icon: Icons.add,
+                                              _QuickAdjustButton(
+                                                icon: Icons.add,
+                                                onPressed: () => invoiceVM.addItem(product.name, product.price, product.unit, 1),
+                                                iconSize: 18,
+                                                backgroundColor: Colors.transparent, // Blend
+                                                foregroundColor: currentQty > 0 ? Theme.of(context).colorScheme.onPrimaryContainer : Theme.of(context).colorScheme.primary,
+                                              ),
+                                            ],
+                                          ),
                                         ),
                                       ],
                                     ),
-                                  ],
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
+                          ),
+                        );
+                      },
                     );
                   },
                 ),
               ),
-          ],
+            ],
           );
         },
       ),
@@ -532,6 +549,7 @@ class _QuickAdjustButton extends StatefulWidget {
   final bool enabled;
   final Color? backgroundColor;
   final Color? foregroundColor;
+  final double iconSize;
 
   const _QuickAdjustButton({
     super.key,
@@ -540,6 +558,7 @@ class _QuickAdjustButton extends StatefulWidget {
     this.enabled = true,
     this.backgroundColor,
     this.foregroundColor,
+    this.iconSize = 18.0,
   });
 
   @override
@@ -573,8 +592,8 @@ class _QuickAdjustButtonState extends State<_QuickAdjustButton> {
       child: IconButton.filledTonal(
         // We use onPressed for the single tap.
         onPressed: widget.enabled ? widget.onPressed : null,
-        icon: Icon(widget.icon, size: 18),
-        constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+        icon: Icon(widget.icon, size: widget.iconSize),
+        constraints: BoxConstraints(minWidth: widget.iconSize * 2, minHeight: widget.iconSize * 2),
         padding: EdgeInsets.zero,
         style: IconButton.styleFrom(
           backgroundColor: widget.backgroundColor,

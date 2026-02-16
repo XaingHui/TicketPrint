@@ -47,20 +47,15 @@ class InvoiceViewModel extends ChangeNotifier {
   // Methods
 
   /// 添加商品条目
+  /// 添加商品条目 (累加数量)
   void addItem(String name, double price, String unit, double quantity) {
-    final total = _calculationStrategy.calculateItemTotal(price, quantity);
-    // 这里我们简单地将 total 作为不变量，或者如果 InvoiceItem 允许存储 total，则存入
-    // 由于 InvoiceItem 的 total 是 getter 计算的，我们只需要存基础数据
-    
-    final item = InvoiceItem(
-      productName: name,
-      price: price,
-      unit: unit,
-      quantity: quantity,
-    );
-    
-    _currentItems.add(item);
-    notifyListeners();
+    final existingIndex = _currentItems.indexWhere((item) => item.productName == name);
+    if (existingIndex != -1) {
+      final currentQty = _currentItems[existingIndex].quantity;
+      updateProductQuantity(name, price, unit, currentQty + quantity);
+    } else {
+      updateProductQuantity(name, price, unit, quantity);
+    }
   }
 
   /// 移除商品条目
@@ -161,7 +156,7 @@ class InvoiceViewModel extends ChangeNotifier {
   /// 保存当前票据并生成 PDF
   Future<void> saveAndPrintInvoice() async {
     if (_currentItems.isEmpty) {
-      _errorMessage = "购物车为空";
+      _errorMessage = "票据为空";
       notifyListeners();
       return;
     }
@@ -244,13 +239,24 @@ class InvoiceViewModel extends ChangeNotifier {
       final fileName = "${timestamp}.pdf";
 
       final savePath = _storageService.savePath;
+      bool saveSuccess = false;
+      
       if (savePath != null) {
-        final fullPath = p.join(savePath, fileName);
-        final file = File(fullPath);
-        await file.writeAsBytes(pdfBytes);
-        _errorMessage = "已保存至: $fullPath";
-        notifyListeners();
-      } else {
+        try {
+          final fullPath = p.join(savePath, fileName);
+          final file = File(fullPath);
+          await file.writeAsBytes(pdfBytes);
+          _errorMessage = "已保存至: $fullPath";
+          saveSuccess = true;
+          notifyListeners();
+        } catch (e) {
+          // Fallback if writing fails (e.g. Permission Denied on Android 10+)
+          if (kDebugMode) print("File save failed: $e, falling back to share.");
+          _errorMessage = "默认路径保存失败，请手动保存";
+        }
+      } 
+      
+      if (!saveSuccess) {
         await Printing.sharePdf(
           bytes: pdfBytes,
           filename: fileName,

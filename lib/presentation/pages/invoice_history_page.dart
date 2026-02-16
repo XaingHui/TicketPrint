@@ -4,6 +4,7 @@ import 'package:gap/gap.dart';
 import 'package:intl/intl.dart'; // For date formatting display
 import '../../application/viewmodels/invoice_history_view_model.dart';
 import '../../domain/entities/invoice.dart';
+import '../../presentation/widgets/themed_scaffold.dart';
 
 class InvoiceHistoryPage extends StatefulWidget {
   const InvoiceHistoryPage({super.key});
@@ -55,7 +56,7 @@ class _InvoiceHistoryPageState extends State<InvoiceHistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return ThemedScaffold(
       appBar: AppBar(
         title: const Text('开票记录'),
         actions: [
@@ -81,6 +82,7 @@ class _InvoiceHistoryPageState extends State<InvoiceHistoryPage> {
                       // Time Filter Toggles
                       SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                         child: SegmentedButton<HistoryFilterType>(
                           segments: const [
                             ButtonSegment(value: HistoryFilterType.today, label: Text('今日')),
@@ -98,6 +100,11 @@ class _InvoiceHistoryPageState extends State<InvoiceHistoryPage> {
                             }
                           },
                           showSelectedIcon: false,
+                          style: ButtonStyle(
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                            visualDensity: const VisualDensity(horizontal: -4, vertical: -4), // Max compactness
+                            padding: WidgetStateProperty.all(EdgeInsets.zero), // Remove internal padding
+                          ),
                         ),
                       ),
                       
